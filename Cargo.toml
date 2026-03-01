@@ -1,0 +1,29 @@
+[package]
+name = "cosmic-md"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+description = "A fast, minimal markdown viewer for COSMIC desktop"
+license = "MIT"
+repository = "https://github.com/peterbenoit/cosmic-md"
+
+[package.metadata.deb]
+maintainer = "Peter Benoit"
+section = "utility"
+depends = "$auto"
+assets = [
+    ["target/release/cosmic-md", "usr/bin/", "755"],
+    ["res/com.cosmic.md-viewer.desktop", "usr/share/applications/", "644"],
+]
+
+[dependencies.libcosmic]
+git = "https://github.com/pop-os/libcosmic.git"
+default-features = false
+features = ["markdown", "highlighter", "tokio", "winit"]
+
+[dependencies]
+open = "5"
+
+[profile.release]
+opt-level = 3
+lto = "thin"

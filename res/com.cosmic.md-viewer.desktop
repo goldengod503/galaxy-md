@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Markdown Viewer
+Comment=A fast, minimal markdown viewer for COSMIC
+Exec=cosmic-md %f
+Icon=text-x-markdown
+Terminal=false
+Type=Application
+Categories=Utility;TextEditor;
+MimeType=text/markdown;text/x-markdown;
