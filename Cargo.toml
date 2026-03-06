@@ -24,7 +24,9 @@ default-features = false
 features = ["markdown", "highlighter", "tokio", "winit"]
 
 [dependencies]
+notify = "8"
 open = "5"
+pulldown-cmark = "0.12"
 
 [profile.release]
 opt-level = 3

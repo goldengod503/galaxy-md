@@ -1856,7 +1856,9 @@ name = "galaxy-md"
 version = "0.1.0"
 dependencies = [
  "libcosmic",
+ "notify",
  "open",
+ "pulldown-cmark",
 ]
 
 [[package]]
