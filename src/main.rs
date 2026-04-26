@@ -3,9 +3,36 @@ use std::path::PathBuf;
 use cosmic::app::Settings;
 use cosmic::iced::border;
 use cosmic::iced_core::text::Highlight;
-use cosmic::iced_core::{color, padding, Color, Length};
+use cosmic::iced_core::{padding, Background, Color, Length};
+use cosmic::iced_runtime::Appearance;
+use cosmic::iced_widget::container;
+use cosmic::iced_widget::text_editor as ied_text_editor;
+use cosmic::theme;
 use cosmic::widget::{markdown, scrollable, text_editor};
 use cosmic::{executor, prelude::*, Core};
+
+// Tokyo Night palette (Night variant) — mirrors enkia.tokyo-night.
+const fn tn(hex: u32) -> Color {
+    Color {
+        r: ((hex >> 16) & 0xff) as f32 / 255.0,
+        g: ((hex >> 8) & 0xff) as f32 / 255.0,
+        b: (hex & 0xff) as f32 / 255.0,
+        a: 1.0,
+    }
+}
+
+const TN_BG: Color = tn(0x1a1b26);
+const TN_BG_DARK: Color = tn(0x16161e);
+const TN_FG: Color = tn(0xc0caf5);
+const TN_COMMENT: Color = tn(0x565f89);
+const TN_BLUE: Color = tn(0x7aa2f7);
+const TN_ORANGE: Color = tn(0xff9e64);
+const TN_SELECTION: Color = Color {
+    r: 0x36 as f32 / 255.0,
+    g: 0x4a as f32 / 255.0,
+    b: 0x82 as f32 / 255.0,
+    a: 0.6,
+};
 
 struct App {
     core: Core,
@@ -130,6 +157,14 @@ impl cosmic::Application for App {
         ]
     }
 
+    fn style(&self) -> Option<Appearance> {
+        Some(Appearance {
+            background_color: TN_BG,
+            text_color: TN_FG,
+            icon_color: TN_FG,
+        })
+    }
+
     fn update(&mut self, message: Self::Message) -> cosmic::app::Task<Self::Message> {
         match message {
             Message::LinkClicked(url) => {
@@ -204,25 +239,36 @@ impl cosmic::Application for App {
             let editor = cosmic::widget::TextEditor::new(&self.editor_content)
                 .on_action(Message::EditorAction)
                 .padding(24)
-                .size(16);
+                .size(16)
+                .class(theme::iced::TextEditor::Custom(Box::new(
+                    |_theme, _status| ied_text_editor::Style {
+                        background: Background::Color(TN_BG),
+                        border: border::rounded(0),
+                        icon: TN_FG,
+                        placeholder: TN_COMMENT,
+                        value: TN_FG,
+                        selection: TN_SELECTION,
+                    },
+                )));
 
             cosmic::widget::container(editor)
                 .width(Length::Fill)
                 .height(Length::Fill)
+                .style(|_theme| container::Style {
+                    background: Some(Background::Color(TN_BG)),
+                    text_color: Some(TN_FG),
+                    ..Default::default()
+                })
                 .into()
         } else {
-            let cosmic_theme = cosmic::theme::active();
-            let cosmic_inner = cosmic_theme.cosmic();
-            let accent = Color::from(cosmic_inner.accent.base);
-
             let style = markdown::Style {
                 inline_code_highlight: Highlight {
-                    background: color!(0x2a2a2a).into(),
+                    background: Background::Color(TN_BG_DARK),
                     border: border::rounded(4),
                 },
-                inline_code_padding: padding::left(4).right(4),
-                inline_code_color: Color::WHITE,
-                link_color: accent,
+                inline_code_padding: padding::left(6).right(6),
+                inline_code_color: TN_ORANGE,
+                link_color: TN_BLUE,
             };
 
             let content = markdown::view(
@@ -232,12 +278,19 @@ impl cosmic::Application for App {
             )
             .map(Message::LinkClicked);
 
-            scrollable(
-                cosmic::widget::container(content)
-                    .padding(24)
-                    .width(Length::Fill),
-            )
-            .into()
+            let body = cosmic::widget::container(content)
+                .padding(24)
+                .width(Length::Fill);
+
+            cosmic::widget::container(scrollable(body))
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .style(|_theme| container::Style {
+                    background: Some(Background::Color(TN_BG)),
+                    text_color: Some(TN_FG),
+                    ..Default::default()
+                })
+                .into()
         }
     }
 }
@@ -275,3 +328,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
