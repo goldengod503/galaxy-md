@@ -23,6 +23,7 @@ const fn tn(hex: u32) -> Color {
 
 const TN_BG: Color = tn(0x1a1b26);
 const TN_BG_DARK: Color = tn(0x16161e);
+const TN_BG_LIGHT: Color = tn(0x24283b);
 const TN_FG: Color = tn(0xc0caf5);
 const TN_COMMENT: Color = tn(0x565f89);
 const TN_BLUE: Color = tn(0x7aa2f7);
@@ -49,6 +50,71 @@ enum Message {
     FileChanged,
     EditorAction(text_editor::Action),
     ToggleSelectable,
+}
+
+// Group markdown items into sections (heading + following body) so the body
+// can be wrapped in a lighter container — visually breaks up content under
+// each heading.
+fn render_sections<'a>(
+    items: &'a [markdown::Item],
+    settings: markdown::Settings,
+    style: markdown::Style,
+) -> Element<'a, markdown::Url> {
+    use cosmic::widget::Column;
+
+    let mut sections: Vec<Element<'a, markdown::Url>> = Vec::new();
+    let mut pending_heading: Option<Element<'a, markdown::Url>> = None;
+    let mut pending_body: Vec<Element<'a, markdown::Url>> = Vec::new();
+
+    fn flush<'a>(
+        sections: &mut Vec<Element<'a, markdown::Url>>,
+        heading: Option<Element<'a, markdown::Url>>,
+        body: Vec<Element<'a, markdown::Url>>,
+    ) {
+        match (heading, body.is_empty()) {
+            (Some(h), true) => sections.push(h),
+            (Some(h), false) => {
+                let body_col = Column::with_children(body).spacing(8);
+                let boxed = cosmic::widget::container(body_col)
+                    .padding([14, 18])
+                    .width(Length::Fill)
+                    .style(|_theme| container::Style {
+                        background: Some(Background::Color(TN_BG_LIGHT)),
+                        text_color: Some(TN_FG),
+                        border: border::rounded(8),
+                        ..Default::default()
+                    });
+                sections.push(
+                    Column::with_children(vec![h, boxed.into()])
+                        .spacing(8)
+                        .into(),
+                );
+            }
+            (None, true) => {}
+            (None, false) => {
+                sections.push(Column::with_children(body).spacing(8).into());
+            }
+        }
+    }
+
+    for (idx, item) in items.iter().enumerate() {
+        match item {
+            markdown::Item::Heading(_, _) => {
+                flush(
+                    &mut sections,
+                    pending_heading.take(),
+                    std::mem::take(&mut pending_body),
+                );
+                pending_heading = Some(item.view(settings, style, idx));
+            }
+            _ => {
+                pending_body.push(item.view(settings, style, idx));
+            }
+        }
+    }
+    flush(&mut sections, pending_heading.take(), pending_body);
+
+    Column::with_children(sections).spacing(16).into()
 }
 
 fn markdown_to_plain_text(source: &str) -> String {
@@ -271,12 +337,9 @@ impl cosmic::Application for App {
                 link_color: TN_BLUE,
             };
 
-            let content = markdown::view(
-                &self.items,
-                markdown::Settings::with_text_size(16),
-                style,
-            )
-            .map(Message::LinkClicked);
+            let settings = markdown::Settings::with_text_size(16);
+            let content = render_sections(&self.items, settings, style)
+                .map(Message::LinkClicked);
 
             let body = cosmic::widget::container(content)
                 .padding(24)
