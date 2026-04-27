@@ -27,7 +27,7 @@ const TN_BG_LIGHT: Color = tn(0x24283b);
 const TN_FG: Color = tn(0xc0caf5);
 const TN_COMMENT: Color = tn(0x565f89);
 const TN_BLUE: Color = tn(0x7aa2f7);
-const TN_ORANGE: Color = tn(0xff9e64);
+const TN_ORANGE: Color = tn(0xcc8966);
 const TN_SELECTION: Color = Color {
     r: 0x36 as f32 / 255.0,
     g: 0x4a as f32 / 255.0,
